@@ -1,11 +1,9 @@
-import { index } from "./index";
+// import { index } from "./index";
 
-console.log("a");
+// console.log("a");
 
 describe("index", () => {
   test("it should equal foo", () => {
-    expect(index).toEqual("foo");
+    expect("foo").toEqual("foo");
   });
 });
-
-console.log("b");

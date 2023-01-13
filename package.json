@@ -1,6 +1,6 @@
 {
   "name": "@larner.dev/migrate",
-  "description": "A larner.dev project",
+  "description": "CLI for applying database migrations",
   "version": "1.0.0",
   "author": "Aaron Larner",
   "type": "module",

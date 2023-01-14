@@ -10,6 +10,8 @@ npx @larner.dev/migrate up [options] <dir> <conection_string>
 Apply all new migrations in <dir> to the database at <conection_string>
 
 Options:
+  -w, --watch                   Watch for changes to <dir> and apply migrations any time files in
+                                the directory change
   -f, --filter <regex_pattern>  Only include files in <dir> that match the specified regex
                                 pattern.
   -h, --help                    display help for command

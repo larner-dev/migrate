@@ -150,7 +150,9 @@ export const upCommand = async (
           migrationDir,
           db,
           (message: string, isError?: boolean) =>
-            options.watch ? log(message) : exit(message, program, db, isError),
+            options.watch || !isError
+              ? log(message)
+              : exit(message, program, db, isError),
           filterRegex
         );
       }

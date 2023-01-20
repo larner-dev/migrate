@@ -6,6 +6,7 @@ import { log } from "../lib/log";
 import { cwd } from "process";
 import { join, resolve } from "path";
 import { watch } from "chokidar";
+import { readFileSync } from "fs";
 
 const exit = (
   message: string,
@@ -83,7 +84,8 @@ const runMigrations = async (
         `Rolled back... An error occurred while running migration ${currentMigrationVersion}: '${
           (error as Record<string, unknown>).message
         }'`
-      )
+      ),
+      true
     );
   }
 };
@@ -100,24 +102,50 @@ export const upCommand = async (
   try {
     db = new Sequelize(connectionString, {
       logging: false,
+      dialectOptions: {
+        ssl: options.ssl
+          ? {
+              require: true,
+              rejectUnauthorized: false,
+            }
+          : false,
+      },
     });
   } catch (error) {
-    return exit(
-      chalk.red(
-        `Error connecting to the database with connection string '${connectionString}'`
-      ),
-      program
-    );
+    try {
+      const json = JSON.parse(
+        readFileSync(resolve(cwd(), connectionString)).toString()
+      );
+      db = new Sequelize(json.DB_NAME, json.DB_USER, json.DB_PASSWORD, {
+        dialect: "postgres",
+        host: json.DB_HOST,
+        port: json.DB_PORT,
+        logging: false,
+        dialectOptions: {
+          ssl: options.ssl
+            ? {
+                require: true,
+                rejectUnauthorized: false,
+              }
+            : false,
+        },
+      });
+    } catch (error2) {
+      console.log(error2);
+      return exit(
+        chalk.red(`Error connecting to the database '${connectionString}'`),
+        program
+      );
+    }
   }
 
   // Ensure that we can authenticate
   try {
     await db.authenticate();
   } catch (error) {
+    console.log(error);
     return exit(
-      chalk.red(
-        `Unable to authenticate with connection string '${connectionString}'`
-      ),
+      chalk.red(`Unable to authenticate '${connectionString}'`),
       program,
       db
     );

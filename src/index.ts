@@ -10,9 +10,12 @@ program
   .version(pkg.version);
 
 program
-  .command("up <dir> <conection_string>")
+  .command("up <dir> <credentials>")
   .description(
-    "Apply all new migrations in <dir> to the database at <conection_string>"
+    "Apply all new migrations in <dir> to the database using <credentials>. " +
+      "<credentials> should be either a valid db connection string or a json file path. If a json " +
+      "file path is provided, it should contain the following keys: DB_HOST, DB_NAME, DB_PASSWORD, " +
+      "DB_PORT, DB_USER."
   )
   .option(
     "-w, --watch",
@@ -22,6 +25,7 @@ program
     "-f, --filter <regex_pattern>",
     "Only include files in <dir> that match the specified regex pattern."
   )
+  .option("-s, --ssl", "Use ssl when connecting.")
   .action((dir, connectionString, options) =>
     upCommand(dir, connectionString, options, program)
   );

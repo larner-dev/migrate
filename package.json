@@ -6,8 +6,8 @@
   "type": "module",
   "scripts": {
     "build": "npm run build-cjs && npm run build-esm && npm run build-types",
-    "build-cjs": "esbuild src/index.ts --bundle --platform=node --target=node16 --outdir=build/cjs  --packages=external --format=cjs",
-    "build-esm": "esbuild src/index.ts --bundle --platform=node --target=node16 --outdir=build/esm  --packages=external --format=esm",
+    "build-cjs": "esbuild src/index.ts src/cli.ts --bundle --platform=node --target=node16 --outdir=build/cjs  --packages=external --format=cjs",
+    "build-esm": "esbuild src/index.ts src/cli.ts --bundle --platform=node --target=node16 --outdir=build/esm  --packages=external --format=esm",
     "build-types": "tsc --project tsconfig.json --declaration --emitDeclarationOnly --outdir build/types",
     "dev": "npm run build-esm -- --watch",
     "format": "prettier --write \"src/**/*.ts\"",
@@ -47,6 +47,6 @@
   "publishConfig": {
     "access": "public"
   },
-  "bin": "./build/esm/index.js",
+  "bin": "./build/esm/cli.js",
   "license": "UNLICENSED"
 }

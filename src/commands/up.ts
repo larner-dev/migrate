@@ -1,31 +1,21 @@
 import { readdir, readFile } from "fs/promises";
-import chalk from "chalk";
-import { Command } from "commander";
 import { QueryTypes, Sequelize } from "sequelize";
-import { log } from "../lib/log";
 import { cwd } from "process";
 import { join, resolve } from "path";
 import { watch } from "chokidar";
-import { readFileSync } from "fs";
+import { ExitCode, GlobalOptions } from "../types";
+import { logBuilder, Logger, LogLevel } from "../lib/logBuilder";
+import { dbConnect } from "../lib/dbConnect";
 
-const exit = (
-  message: string,
-  program: Command,
-  db?: Sequelize,
-  isError = true
-) => {
-  db?.close();
-  if (isError) {
-    program.error(message);
-  } else {
-    log(message);
-  }
-};
+export interface UpCommandOptions extends GlobalOptions {
+  watch?: boolean;
+  filter?: string;
+}
 
 const runMigrations = async (
   dir: string,
   db: Sequelize,
-  log: (message: string, isError?: boolean) => void,
+  log: Logger,
   filter?: RegExp
 ) => {
   // Create the migrations table if it doesn't already exist
@@ -74,18 +64,18 @@ const runMigrations = async (
         "UPDATE migrations SET ended_at=NOW() WHERE version=$version",
         { bind: { version: migration.version } }
       );
-      log(chalk.green(`Ran migration ${migration.version}`));
+      log(`Ran migration ${migration.version}`, { logLevel: LogLevel.Success });
     }
     await db.query("COMMIT;");
   } catch (error) {
     await db.query("ROLLBACK;");
+    log(error, { logLevel: LogLevel.Error, preStyled: true });
     return log(
-      chalk.red(
-        `Rolled back... An error occurred while running migration ${currentMigrationVersion}: '${
-          (error as Record<string, unknown>).message
-        }'`
-      ),
-      true
+      `Rolled back... An error occurred while running migration ${currentMigrationVersion}`,
+      {
+        code: ExitCode.QueryError,
+        logLevel: LogLevel.Error,
+      }
     );
   }
 };
@@ -93,78 +83,23 @@ const runMigrations = async (
 export const upCommand = async (
   dir: string,
   connectionString: string,
-  options: Record<string, unknown>,
-  program: Command
+  options: UpCommandOptions = {}
 ) => {
-  let db: Sequelize;
-  const migrationDir = resolve(cwd(), dir);
-  // Create the database connection
-  try {
-    db = new Sequelize(connectionString, {
-      logging: false,
-      dialectOptions: {
-        ssl: options.ssl
-          ? {
-              require: true,
-              rejectUnauthorized: false,
-            }
-          : false,
-      },
-    });
-  } catch (error) {
-    try {
-      const json = JSON.parse(
-        readFileSync(resolve(cwd(), connectionString)).toString()
-      );
-      db = new Sequelize(json.DB_NAME, json.DB_USER, json.DB_PASSWORD, {
-        dialect: "postgres",
-        host: json.DB_HOST,
-        port: json.DB_PORT,
-        logging: false,
-        dialectOptions: {
-          ssl: options.ssl
-            ? {
-                require: true,
-                rejectUnauthorized: false,
-              }
-            : false,
-        },
-      });
-    } catch (error2) {
-      console.log(error2);
-      return exit(
-        chalk.red(`Error connecting to the database '${connectionString}'`),
-        program
-      );
-    }
-  }
+  const log = logBuilder(options.logLevels, options.exitOnCompletion);
+  let db: Sequelize = await dbConnect({
+    log,
+    connectionString,
+    ssl: options.ssl,
+  });
 
-  // Ensure that we can authenticate
-  try {
-    await db.authenticate();
-  } catch (error) {
-    console.log(error);
-    return exit(
-      chalk.red(`Unable to authenticate '${connectionString}'`),
-      program,
-      db
-    );
-  }
+  const migrationDir = resolve(cwd(), dir);
 
   let filterRegex: RegExp | undefined;
   if (options.filter) {
-    filterRegex = new RegExp(options.filter as string);
+    filterRegex = new RegExp(options.filter);
   }
 
-  await runMigrations(
-    migrationDir,
-    db,
-    (message: string, isError?: boolean) =>
-      options.watch || !isError
-        ? log(message)
-        : exit(message, program, db, isError),
-    filterRegex
-  );
+  await runMigrations(migrationDir, db, log, filterRegex);
 
   if (options.watch) {
     watch(migrationDir, {
@@ -176,23 +111,13 @@ export const upCommand = async (
         (!filterRegex ||
           filterRegex.test(path.substring(migrationDir.length + 1)))
       ) {
-        runMigrations(
-          migrationDir,
-          db,
-          (message: string, isError?: boolean) =>
-            options.watch || !isError
-              ? log(message)
-              : exit(message, program, db, isError),
-          filterRegex
-        );
+        runMigrations(migrationDir, db, log, filterRegex);
       }
     });
   } else {
-    return exit(
-      chalk.green("All migrations ran successfully!"),
-      program,
-      db,
-      false
-    );
+    return log("All migrations ran successfully!", {
+      code: ExitCode.Success,
+      logLevel: LogLevel.Success,
+    });
   }
 };

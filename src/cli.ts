@@ -55,6 +55,4 @@ program
     truncateAllCommand(connectionString, setOptionDefaults(options))
   );
 
-program.showHelpAfterError();
-
 program.parse();

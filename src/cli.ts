@@ -29,7 +29,8 @@ program
   )
   .option(
     "-f, --filter <regex_pattern>",
-    "Only include files in <dir> that match the specified regex pattern."
+    "Only include files in <dir> that match the specified regex pattern. There should be exactly " +
+      "one regex capture group that captures the id of the migration from the file path."
   )
   .option(
     "-l, --logLevels",

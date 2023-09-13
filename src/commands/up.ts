@@ -119,7 +119,9 @@ export const runMigrations = async (
     await db.query("ROLLBACK");
     log(error, { logLevel: LogLevel.Error, preStyled: true });
     return log(
-      `Rolled back... An error occurred while running migration ${currentMigrationVersion}`,
+      `Rolled back... An error occurred while running migration ${JSON.stringify(
+        currentMigrationVersion
+      )}`,
       {
         code: ExitCode.QueryError,
         logLevel: LogLevel.Error,
@@ -133,7 +135,8 @@ export const upCommand = async (
   connectionString: string,
   options: UpCommandOptions = {}
 ) => {
-  const log = logBuilder(options.logLevels, options.exitOnCompletion);
+  const exitOnCompletion = options.watch ? false : options.exitOnCompletion;
+  const log = logBuilder(options.logLevels, exitOnCompletion);
   let db: Sequelize = await dbConnect({
     log,
     connectionString,
@@ -160,15 +163,22 @@ export const upCommand = async (
     watch(migrationDir, {
       awaitWriteFinish: { pollInterval: 100, stabilityThreshold: 2000 },
       ignoreInitial: true,
-    }).on("all", (event, path) => {
-      if (
-        ["add", "change"].includes(event) &&
-        (!filterRegex ||
-          filterRegex.test(path.substring(migrationDir.length + 1)))
-      ) {
-        runMigrations(migrationDir, db, log, filterRegex);
-      }
-    });
+    })
+      .on("all", (event, path) => {
+        if (
+          ["add", "change"].includes(event) &&
+          (!filterRegex ||
+            filterRegex.test(path.substring(migrationDir.length + 1)))
+        ) {
+          runMigrations(migrationDir, db, log, filterRegex);
+        }
+      })
+      .on("error", (event) => {
+        return log(event, {
+          code: ExitCode.UncaughtException,
+          logLevel: LogLevel.Error,
+        });
+      });
   } else {
     return log("All migrations ran successfully!", {
       code: ExitCode.Success,

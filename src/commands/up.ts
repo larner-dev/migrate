@@ -121,6 +121,7 @@ export const runMigrations = async (
       logLevel: LogLevel.Error,
       preStyled: true,
     });
+    console.log(db);
     return log(
       `Rolled back... An error occurred while running migration ${JSON.stringify(
         currentMigrationVersion

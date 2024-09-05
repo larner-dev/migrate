@@ -36,6 +36,7 @@ describe("runMigrations", () => {
   test("runs migrations on flat directory structure", async () => {
     const db = {
       query: vi.fn(async () => []),
+      config: { database: "db" },
     } as unknown as Sequelize;
     const log = vi.fn(logBuilder([]));
     await expect(
@@ -56,16 +57,17 @@ describe("runMigrations", () => {
       'ALTER TABLE "users" RENAME COLUMN "id" TO "id2";'
     );
     expect(db.query).toHaveBeenNthCalledWith(10, "COMMIT");
-    expect(log).toHaveBeenNthCalledWith(1, "Ran migration 00001", {
+    expect(log).toHaveBeenNthCalledWith(1, "Ran migration 00001 for db", {
       logLevel: "success",
     });
-    expect(log).toHaveBeenNthCalledWith(2, "Ran migration 00002", {
+    expect(log).toHaveBeenNthCalledWith(2, "Ran migration 00002 for db", {
       logLevel: "success",
     });
   });
   test("runs migrations on nested directory structure", async () => {
     const db = {
       query: vi.fn(async () => []),
+      config: { database: "db" },
     } as unknown as Sequelize;
     const log = vi.fn(logBuilder([]));
     await expect(
@@ -91,10 +93,10 @@ describe("runMigrations", () => {
       'ALTER TABLE "users" RENAME COLUMN "id" TO "id2";'
     );
     expect(db.query).toHaveBeenNthCalledWith(10, "COMMIT");
-    expect(log).toHaveBeenNthCalledWith(1, "Ran migration 00001", {
+    expect(log).toHaveBeenNthCalledWith(1, "Ran migration 00001 for db", {
       logLevel: "success",
     });
-    expect(log).toHaveBeenNthCalledWith(2, "Ran migration 00002", {
+    expect(log).toHaveBeenNthCalledWith(2, "Ran migration 00002 for db", {
       logLevel: "success",
     });
   });

@@ -110,18 +110,21 @@ export const runMigrations = async (
         "UPDATE migrations SET ended_at=NOW() WHERE version=$version",
         { bind: { version: migration.info.version } }
       );
-      log(`Ran migration ${migration.info.version}`, {
+      log(`Ran migration ${migration.info.version} for ${db.config.database}`, {
         logLevel: LogLevel.Success,
       });
     }
     await db.query("COMMIT");
   } catch (error) {
     await db.query("ROLLBACK");
-    log(error, { logLevel: LogLevel.Error, preStyled: true });
+    log(error, {
+      logLevel: LogLevel.Error,
+      preStyled: true,
+    });
     return log(
       `Rolled back... An error occurred while running migration ${JSON.stringify(
         currentMigrationVersion
-      )}`,
+      )} for ${db.config.database}`,
       {
         code: ExitCode.QueryError,
         logLevel: LogLevel.Error,

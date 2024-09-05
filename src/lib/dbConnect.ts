@@ -18,7 +18,7 @@ const exitHandler = (code: number) => {
   process.exit(code);
 };
 
-const uncaughtExceptionHandler = (err: unknown) => {
+const uncaughtExceptionHandler = () => {
   db?.close();
   process.exit(ExitCode.UncaughtException);
 };

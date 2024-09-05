@@ -1,5 +1,4 @@
 import chalk from "chalk";
-import { Sequelize } from "sequelize";
 import { ExitCode } from "../types";
 
 export enum LogLevel {

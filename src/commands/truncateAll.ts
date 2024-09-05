@@ -1,4 +1,3 @@
-import chalk from "chalk";
 import { Sequelize } from "sequelize";
 import { logBuilder, LogLevel } from "../lib/logBuilder";
 import { ExitCode, GlobalOptions } from "../types";
@@ -11,7 +10,7 @@ export const truncateAllCommand = async (
   options: TruncateAllCommandOptions = {}
 ) => {
   const log = logBuilder(options.logLevels, options.exitOnCompletion);
-  let db: Sequelize = await dbConnect({
+  const db: Sequelize = await dbConnect({
     log,
     connectionString,
     ssl: options.ssl,

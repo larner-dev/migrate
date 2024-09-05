@@ -22,10 +22,21 @@ export default defineConfig({
     }),
   ],
   build: {
+    rollupOptions: {
+      input: [
+        resolve(__dirname, "src/index.ts"),
+        resolve(__dirname, "src/cli.ts"),
+      ],
+      output: {
+        preserveModules: false,
+        inlineDynamicImports: false,
+        entryFileNames: "[name].js",
+      },
+    },
     lib: {
       entry: resolve(__dirname, "src/index.ts"),
       name: "migrate",
-      formats: ["es", "umd"],
+      formats: ["es"],
       fileName: "index",
     },
   },

@@ -135,6 +135,7 @@ export const upCommand = async (
   connectionStrings: string[],
   options: UpCommandOptions = {}
 ) => {
+  console.log({ connectionStrings });
   const exitOnCompletion = options.watch ? false : options.exitOnCompletion;
   const log = logBuilder(options.logLevels, exitOnCompletion);
   const dbs = await Promise.all(

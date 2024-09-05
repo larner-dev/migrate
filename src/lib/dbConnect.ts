@@ -11,15 +11,20 @@ interface DbConnectOptions {
   ssl?: boolean;
 }
 
-let db: Sequelize | null = null;
+const dbs: Record<string, Sequelize> = {};
 
 const exitHandler = (code: number) => {
-  db?.close();
+  for (const db of Object.values(dbs)) {
+    db.close();
+  }
+
   process.exit(code);
 };
 
 const uncaughtExceptionHandler = () => {
-  db?.close();
+  for (const db of Object.values(dbs)) {
+    db.close();
+  }
   process.exit(ExitCode.UncaughtException);
 };
 
@@ -31,12 +36,12 @@ export const dbConnect = async ({
   connectionString,
   ssl,
 }: DbConnectOptions): Promise<Sequelize> => {
-  if (db) {
-    return db;
+  if (dbs[connectionString]) {
+    return dbs[connectionString];
   }
   // Create the database connection
   try {
-    db = new Sequelize(connectionString, {
+    dbs[connectionString] = new Sequelize(connectionString, {
       logging: false,
       dialectOptions: {
         ssl: ssl
@@ -52,20 +57,25 @@ export const dbConnect = async ({
       const json = JSON.parse(
         readFileSync(resolve(cwd(), connectionString)).toString()
       );
-      db = new Sequelize(json.DB_NAME, json.DB_USER, json.DB_PASSWORD, {
-        dialect: "postgres",
-        host: json.DB_HOST,
-        port: json.DB_PORT,
-        logging: false,
-        dialectOptions: {
-          ssl: ssl
-            ? {
-                require: true,
-                rejectUnauthorized: false,
-              }
-            : false,
-        },
-      });
+      dbs[connectionString] = new Sequelize(
+        json.DB_NAME,
+        json.DB_USER,
+        json.DB_PASSWORD,
+        {
+          dialect: "postgres",
+          host: json.DB_HOST,
+          port: json.DB_PORT,
+          logging: false,
+          dialectOptions: {
+            ssl: ssl
+              ? {
+                  require: true,
+                  rejectUnauthorized: false,
+                }
+              : false,
+          },
+        }
+      );
     } catch (error2) {
       log(
         `Could not connect to database with connection string ${connectionString}`,
@@ -78,13 +88,13 @@ export const dbConnect = async ({
     }
   }
 
-  if (!db) {
+  if (!dbs) {
     throw new Error("SHOULD NOT HAPPEN");
   }
 
   // Ensure that we can authenticate
   try {
-    await db.authenticate();
+    await dbs[connectionString].authenticate();
   } catch (error) {
     log(error as string, {
       code: ExitCode.AuthenticateError,
@@ -92,5 +102,5 @@ export const dbConnect = async ({
     });
   }
 
-  return db;
+  return dbs[connectionString];
 };

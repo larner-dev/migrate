@@ -135,7 +135,6 @@ export const upCommand = async (
   connectionStrings: string[],
   options: UpCommandOptions = {}
 ) => {
-  console.log({ connectionStrings });
   const exitOnCompletion = options.watch ? false : options.exitOnCompletion;
   const log = logBuilder(options.logLevels, exitOnCompletion);
   const dbs = await Promise.all(
@@ -156,10 +155,9 @@ export const upCommand = async (
   }
 
   try {
-    for (const db of dbs) {
-      console.log("running migration for", db.config.database);
-      await runMigrations(migrationDir, db, log, filterRegex);
-    }
+    await Promise.all(
+      dbs.map((db) => runMigrations(migrationDir, db, log, filterRegex))
+    );
   } catch (error) {
     return log(error, {
       code: ExitCode.UncaughtException,

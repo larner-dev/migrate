@@ -155,9 +155,10 @@ export const upCommand = async (
   }
 
   try {
-    await Promise.all(
-      dbs.map((db) => runMigrations(migrationDir, db, log, filterRegex))
-    );
+    for (const db of dbs) {
+      console.log("running migration for", db.config.database);
+      await runMigrations(migrationDir, db, log, filterRegex);
+    }
   } catch (error) {
     return log(error, {
       code: ExitCode.UncaughtException,

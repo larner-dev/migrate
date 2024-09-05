@@ -16,10 +16,10 @@ program
   .version(pkg.version);
 
 program
-  .command("up <dir> <credentials>")
+  .command("up <dir> <credentials...>")
   .description(
-    "Apply all new migrations in <dir> to the database using <credentials>. " +
-      "<credentials> should be either a valid db connection string or a json file path. If a json " +
+    "Apply all new migrations in <dir> to the database(s) using <credentials>. " +
+      "<credentials> should be one or more valid db connection strings or json file paths. If a json " +
       "file path is provided, it should contain the following keys: DB_HOST, DB_NAME, DB_PASSWORD, " +
       "DB_PORT, DB_USER."
   )
@@ -39,7 +39,7 @@ program
   )
   .option("-s, --ssl", "Use ssl when connecting.")
   .action(
-    (dir: string, connectionString: string, options: Raw<UpCommandOptions>) =>
+    (dir: string, connectionString: string[], options: Raw<UpCommandOptions>) =>
       upCommand(dir, connectionString, setOptionDefaults(options))
   );
 

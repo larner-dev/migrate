@@ -132,16 +132,20 @@ export const runMigrations = async (
 
 export const upCommand = async (
   dir: string,
-  connectionString: string,
+  connectionStrings: string[],
   options: UpCommandOptions = {}
 ) => {
   const exitOnCompletion = options.watch ? false : options.exitOnCompletion;
   const log = logBuilder(options.logLevels, exitOnCompletion);
-  let db: Sequelize = await dbConnect({
-    log,
-    connectionString,
-    ssl: options.ssl,
-  });
+  const dbs = await Promise.all(
+    connectionStrings.map((c) =>
+      dbConnect({
+        log,
+        connectionString: c,
+        ssl: options.ssl,
+      })
+    )
+  );
 
   const migrationDir = resolve(cwd(), dir);
 
@@ -151,7 +155,9 @@ export const upCommand = async (
   }
 
   try {
-    await runMigrations(migrationDir, db, log, filterRegex);
+    await Promise.all(
+      dbs.map((db) => runMigrations(migrationDir, db, log, filterRegex))
+    );
   } catch (error) {
     return log(error, {
       code: ExitCode.UncaughtException,
@@ -170,7 +176,7 @@ export const upCommand = async (
           (!filterRegex ||
             filterRegex.test(path.substring(migrationDir.length + 1)))
         ) {
-          runMigrations(migrationDir, db, log, filterRegex);
+          dbs.map((db) => runMigrations(migrationDir, db, log, filterRegex));
         }
       })
       .on("error", (event) => {

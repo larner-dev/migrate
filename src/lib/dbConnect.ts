@@ -88,8 +88,8 @@ export const dbConnect = async ({
     }
   }
 
-  if (!dbs) {
-    throw new Error("SHOULD NOT HAPPEN");
+  if (!dbs[connectionString]) {
+    throw new Error("Failed to create database connection");
   }
 
   // Ensure that we can authenticate

@@ -100,4 +100,16 @@ describe("runMigrations", () => {
       logLevel: "success",
     });
   });
+  test("handles absolute paths correctly", async () => {
+    const db = {
+      query: vi.fn(async () => []),
+      config: { database: "db" },
+    } as unknown as Sequelize;
+    const log = vi.fn(logBuilder([]));
+    const absolutePath = resolve(cwd(), "fixtures/migrations_flat");
+    await expect(runMigrations(absolutePath, db, log)).resolves.toEqual(
+      undefined
+    );
+    expect(db.query).toHaveBeenNthCalledWith(1, "BEGIN");
+  });
 });

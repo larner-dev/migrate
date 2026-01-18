@@ -2,7 +2,7 @@ import { readFile } from "fs/promises";
 import { QueryTypes, Sequelize } from "sequelize";
 import klaw from "klaw";
 import { cwd } from "process";
-import { extname, isAbsolute, join, resolve } from "path";
+import { extname, join, resolve } from "path";
 import { watch } from "chokidar";
 import { ExitCode, GlobalOptions } from "../types";
 import { logBuilder, Logger, LogLevel } from "../lib/logBuilder";
@@ -24,9 +24,7 @@ export const runMigrations = async (
   log: Logger,
   filter?: RegExp
 ) => {
-  if (!isAbsolute(dir)) {
-    dir = resolve(cwd(), dir);
-  }
+  dir = resolve(cwd(), dir);
 
   const allMigrations = await new Promise<Migration[]>((resolve, reject) => {
     const migrations: Migration[] = [];
@@ -121,7 +119,6 @@ export const runMigrations = async (
       logLevel: LogLevel.Error,
       preStyled: true,
     });
-    console.log(db);
     return log(
       `Rolled back... An error occurred while running migration ${JSON.stringify(
         currentMigrationVersion
@@ -174,13 +171,22 @@ export const upCommand = async (
       awaitWriteFinish: { pollInterval: 100, stabilityThreshold: 2000 },
       ignoreInitial: true,
     })
-      .on("all", (event, path) => {
+      .on("all", async (event, path) => {
         if (
           ["add", "change"].includes(event) &&
           (!filterRegex ||
             filterRegex.test(path.substring(migrationDir.length + 1)))
         ) {
-          dbs.map((db) => runMigrations(migrationDir, db, log, filterRegex));
+          try {
+            await Promise.all(
+              dbs.map((db) => runMigrations(migrationDir, db, log, filterRegex))
+            );
+          } catch (error) {
+            log(error, {
+              code: ExitCode.UncaughtException,
+              logLevel: LogLevel.Error,
+            });
+          }
         }
       })
       .on("error", (event) => {

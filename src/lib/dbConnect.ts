@@ -52,7 +52,7 @@ export const dbConnect = async ({
           : false,
       },
     });
-  } catch (error) {
+  } catch {
     try {
       const json = JSON.parse(
         readFileSync(resolve(cwd(), connectionString)).toString()

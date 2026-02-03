@@ -4,16 +4,55 @@ A tool to run database migrations. Currently only supports postgres.
 
 ## Commands
 
-```
-npx @larner.dev/migrate up [options] <dir> <conection_string>
+### up
 
-Apply all new migrations in <dir> to the database at <conection_string>
+```
+npx @larner.dev/migrate up [options] <dir> <credentials...>
+
+Apply all new migrations in <dir> to the database(s) using <credentials>
 
 Options:
   -w, --watch                   Watch for changes to <dir> and apply migrations any time files in
                                 the directory change
   -f, --filter <regex_pattern>  Only include files in <dir> that match the specified regex
-                                pattern.
+                                pattern. There should be exactly one regex capture group that
+                                captures the id of the migration from the file path.
+  -s, --ssl                     Use ssl when connecting.
+  -l, --logLevels               A comma separated list of log levels to display. Valid values are
+                                info, warning, error, success, all or none. Defaults to all.
+  -h, --help                    display help for command
+```
+
+### reset
+
+```
+npx @larner.dev/migrate reset [options] <dir> <credentials...>
+
+Drop all tables (including migrations) and re-run all migrations from scratch.
+Useful for development iteration and CI test database setup.
+
+Options:
+  -f, --filter <regex_pattern>  Only include files in <dir> that match the specified regex
+                                pattern. There should be exactly one regex capture group that
+                                captures the id of the migration from the file path.
+  --force                       Skip confirmation prompt (for CI/scripted usage)
+  -s, --ssl                     Use ssl when connecting.
+  -l, --logLevels               A comma separated list of log levels to display. Valid values are
+                                info, warning, error, success, all or none. Defaults to all.
+  -h, --help                    display help for command
+```
+
+### truncateAll
+
+```
+npx @larner.dev/migrate truncateAll [options] <credentials>
+
+TRUNCATE all tables except for the migrations table.
+
+Options:
+  -s, --ssl                     Use ssl when connecting.
+  -l, --logLevels               A comma separated list of log levels to display. Valid values are
+                                info, warning, error, success, all or none. Defaults to all.
   -h, --help                    display help for command
 ```
 

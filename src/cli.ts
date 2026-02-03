@@ -2,6 +2,7 @@
 
 import { program } from "commander";
 import pkg from "../package.json";
+import { resetCommand, ResetCommandOptions } from "./commands/reset";
 import {
   truncateAllCommand,
   TruncateAllCommandOptions,
@@ -54,6 +55,30 @@ program
   )
   .action((connectionString, options: Raw<TruncateAllCommandOptions>) =>
     truncateAllCommand(connectionString, setOptionDefaults(options))
+  );
+
+program
+  .command("reset <dir> <credentials...>")
+  .description(
+    "Drop all tables (including migrations) and re-run all migrations from scratch. " +
+      "<dir> is the directory containing migration files. <credentials> should be one or more " +
+      "valid db connection strings or json file paths."
+  )
+  .option(
+    "-f, --filter <regex_pattern>",
+    "Only include files in <dir> that match the specified regex pattern. There should be exactly " +
+      "one regex capture group that captures the id of the migration from the file path."
+  )
+  .option("--force", "Skip confirmation prompt (for CI/scripted usage)")
+  .option("-s, --ssl", "Use ssl when connecting.")
+  .option(
+    "-l, --logLevels",
+    "A comma separated list of log levels to display. Valid values are info, warning, error, " +
+      "success, all or none. Defaults to all."
+  )
+  .action(
+    (dir: string, connectionStrings: string[], options: Raw<ResetCommandOptions>) =>
+      resetCommand(dir, connectionStrings, setOptionDefaults(options))
   );
 
 program.parse();
